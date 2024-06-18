@@ -15,7 +15,7 @@ class Entete:
         self.code_remettant = line[4:6]
         self.ccrr = line[6:9]
         self.date_operation = line[9:17]
-        self.num_lot = line[17:21].strip()
+        self.num_lot = line[17:21]
         self.code_enregistrement = line[21:23]
         self.code_devise = line[23:26]
         self.rang = line[26:28]
@@ -31,7 +31,7 @@ class Entete:
             assert self.sens == "1", f"sens invalid: {self.sens}. Sens value must be 1"
             assert self.code_valeur == "10", f"Code valeur invalid: {self.code_valeur} code valeur must be 10 "
             assert self.nature_remettant == "1", f"Nature remettant invalid: {self.nature_remettant}"
-            assert self.code_remettant == "04", f"Code remettant (code banque) invalid: {self.nature_remettant} it must be 04 for Attijari Bank"
+            assert self.code_remettant == "04", f"Code remettant (code banque) invalid: {self.code_remettant} it must be 04 for Attijari Bank"
             assert self.ccrr == "   ", f"Code du centre régional remettant  invalid: '{self.ccrr}' it must be '   '"
             assert self.date_operation == datetime.today().strftime("%Y%m%d"), f"Date opération invalid: {self.date_operation} it must be today value {datetime.today().strftime("%Y%m%d")}"
             assert self.num_lot == "0001", f"Numéro de lot invalid: {self.num_lot} it must be '0001' "
@@ -49,7 +49,7 @@ class BodyLine:
         self.code_remettant = line[4:6]
         self.ccrr = line[6:9]
         self.date_operation = line[9:17]
-        self.num_lot = line[17:21].strip()
+        self.num_lot = line[17:21]
         self.code_enregistrement = line[21:23]
         self.code_devise = line[23:26]
         self.rang = line[26:28]
@@ -78,7 +78,7 @@ class BodyLine:
             assert self.sens == "1", f"sens invalid: {self.sens}. Sens value must be 1"
             assert self.code_valeur == "10", f"Code valeur invalid: {self.code_valeur} code valeur must be 10 "
             assert self.nature_remettant == "1", f"Nature remettant invalid: {self.nature_remettant}"
-            assert self.code_remettant == "04", f"Code remettant (code banque) invalid: {self.nature_remettant} must be 04 for Attijari Bank"
+            assert self.code_remettant == "04", f"Code remettant (code banque) invalid: {self.code_remettant} must be 04 for Attijari Bank"
             assert self.ccrr == "   ", f"Code du centre régional remettant  invalid: '{self.ccrr}' must be '   '"
             assert self.date_operation == datetime.today().strftime("%Y%m%d"), f"Date opération invalid: {self.date_operation} must be today value {datetime.today().strftime("%Y%m%d")} "
             assert self.num_lot == "0001", f"Numéro de lot invalid: {self.num_lot} must be '0001' "
