@@ -35,8 +35,8 @@ class BodyLine:
         self.rang = line[26:28]
         self.montant_virement = line[28:43]
         self.num_virement = line[43:50]
-        self.rib_emeteur = line[50:70]
-        self.raison_social_emeteur = line[70:100]
+        self.rib_emetteur = line[50:70]
+        self.raison_social_emetteur = line[70:100]
         self.code_banque_destinataire = line[100:102]
         self.ccra = line[102:105]
         self.rib_beneficiaire = line[105:125]
@@ -55,8 +55,6 @@ class BodyLine:
 
     def __repr__(self):
         return f"BodyLine({self.__dict__})"
-    
-
             
 class Virement:
     def __init__(self, header, body):
@@ -81,4 +79,15 @@ class Bank:
         { 'code': '14', 'name': 'BH', 'bic': 'BHBK' },
         { 'code': '16', 'name': 'CITI', 'bic': 'CITI' },
         { 'code': '17', 'name': 'POSTE', 'bic': 'LPTN', 'ccrr': '000', 'ccra': '000', 'extension': 'txt' },
+        {'code': '20', 'name': 'BTK', 'bic': 'BTKO'},
+        {'code': '21', 'name': 'TSB', 'bic': 'TSIB'},
+        {'code': '23', 'name': 'QNB', 'bic': 'BTQI'},
+        {'code': '24', 'name': 'BTE', 'bic': 'BTEX'},
+        {'code': '25', 'name': 'ZITOUNA', 'bic': 'BZIT'},
+        {'code': '26', 'name': 'BTL', 'bic': 'ATLD'},
+        {'code': '28', 'name': 'ABC', 'bic': 'ABCO'},
+        {'code': '29', 'name': 'BFPME', 'bic': 'BFPM'},
+        {'code': '32', 'name': 'ALBARAKA', 'bic': 'BEIT'},
+        {'code': '47', 'name': 'WIFAK', 'bic': 'WKIB'},
+        {'code': '81', 'name': 'ZITOUNAPAY', 'bic': 'ETZP'}
     ]

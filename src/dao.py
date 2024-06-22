@@ -6,10 +6,8 @@ class VirementDAO:
     def get_vir_file(file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             lines = file.readlines()
-
         header = Header(lines[0])  # Assuming Header can be initialized with a single line
         body = [BodyLine(line) for line in lines[1:]]  # Assuming BodyLine can be initialized with a single line
-
         return Virement(header, body)
 
     @staticmethod
@@ -36,7 +34,7 @@ class VirementDAO:
                                 f"{body_line.code_remettant:2}{body_line.ccrr:3}{body_line.date_operation:8}" \
                                 f"{body_line.num_lot:4}{body_line.code_enregistrement:2}{body_line.code_devise:3}" \
                                 f"{body_line.rang:2}{body_line.montant_virement:15}{body_line.num_virement:7}" \
-                                f"{body_line.rib_emeteur:20}{body_line.raison_social_emeteur:30}" \
+                                f"{body_line.rib_emetteur:20}{body_line.raison_social_emetteur:30}" \
                                 f"{body_line.code_banque_destinataire:2}{body_line.ccra:3}" \
                                 f"{body_line.rib_beneficiaire:20}{body_line.nom_beneficiaire:30}" \
                                 f"{body_line.ref_dossier:20}{body_line.code_enregistrement_complementaire:1}" \
@@ -142,7 +140,6 @@ class BodyLineDAO:
             return body_line
         else:
             raise IndexError(f"Index {id} is out of range for the body lines in the file.")
-
 
 class BankDAO:
     @staticmethod
