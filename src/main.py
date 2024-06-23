@@ -2,7 +2,6 @@ import logging
 from service import ProcessingService
 import configparser
 import os
-import pprint
 import glob
 
 def main():
@@ -25,9 +24,11 @@ def main():
         output_file = None  # valeur par défaut
         print(f"Batch Mode Activated : {e}")
     try:
-        mode_batch = config.get('conversion', 'mode_batch').upper
+        mode_batch = config.get('conversion', 'mode_batch')
+        mode_batch = {"true": True, "false": False}.get(mode_batch.lower(), False)
+        print(f"Batch Mode {'Activated' if mode_batch else 'Disactivated'}")
     except Exception as e:
-        mode_batch = None  # valeur par défaut
+        mode_batch = False  # valeur par défaut
         print(f"Batch Mode Disactivated : {e}")
     target_bank_name = config.get('conversion', 'target_bank_name').upper()
     # Read configuration from .conf file ---------------------------------------------
@@ -51,31 +52,18 @@ def main():
     logging.basicConfig(filename=log_file, level=numeric_log_level, format='%(asctime)s - %(levelname)s - %(message)s')
     # Config Log ---------------------------------------------------------------------
 
-    # Print virement ------------------------------------------------------------------
-    def print_readable(virement):
-        print("Header:")
-        pprint.pprint(virement.header)
-        
-        print("\nBody:")
-        for i, record in enumerate(virement.body):
-            print(f"Virement {i + 1}:")
-            pprint.pprint(record)
-            print()  # Add an empty line between records
-    # Print virement -----------------------------------------------------------------
-
     # Main program  ------------------------------------------------------------------
-
-    if mode_batch is None or output_file is None:
+    if mode_batch or output_file is None:
         input_files = glob.glob(os.path.join(input_directory, '*'))
         print(f"List of processing files: {input_files}")
         for input_file in input_files:
             try:
-                ProcessingService.processing_vir_batch(input_file, output_directory, target_bank_name)
+                ProcessingService.processing_vir_batch(input_file, output_directory, target_bank_name,log_level)
             except Exception as e:
                 logging.error(f"An error occurred while batch processing {input_file}: {e}")
     else:
             try:
-                ProcessingService.processing_vir_file(input_file, target_bank_name, output_file)
+                ProcessingService.processing_vir_file(input_file, target_bank_name, output_file,log_level)
             except Exception as e:
                 logging.error(f"An error occurred while file processing {input_file}: {e}")
     # Main program  -----------------------------------------------------------------
