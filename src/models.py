@@ -1,93 +1,72 @@
-class Header:
-    def __init__(self, line):
-        if len(line) == 280:
-            raise ValueError("Line is too short to be a valid BodyLine")
-        self.sens = line[0:1]
-        self.code_valeur = line[1:3]
-        self.nature_remettant = line[3:4]
-        self.code_remettant = line[4:6]
-        self.ccrr = line[6:9]
-        self.date_operation = line[9:17]
-        self.num_lot = line[17:21]
-        self.code_enregistrement = line[21:23]
-        self.code_devise = line[23:26]
-        self.rang = line[26:28]
-        self.montant_total = line[28:43]
-        self.nbr_virement = line[43:53]
-        self.zone_libre_227 = line[53:280]
-        
-    def __repr__(self):
-        return f"Header({self.__dict__})"
+import logging
+from service import ProcessingService
+import configparser
+import os
+import glob
 
-class BodyLine:
-    def __init__(self, line):
-        if len(line) == 280:
-            raise ValueError("Line is too short to be a valid BodyLine")
-        self.sens = line[0:1]
-        self.code_valeur = line[1:3]
-        self.nature_remettant = line[3:4]
-        self.code_remettant = line[4:6]
-        self.ccrr = line[6:9]
-        self.date_operation = line[9:17]
-        self.num_lot = line[17:21]
-        self.code_enregistrement = line[21:23]
-        self.code_devise = line[23:26]
-        self.rang = line[26:28]
-        self.montant_virement = line[28:43]
-        self.num_virement = line[43:50]
-        self.rib_emetteur = line[50:70]
-        self.raison_social_emetteur = line[70:100]
-        self.code_banque_destinataire = line[100:102]
-        self.ccra = line[102:105]
-        self.rib_beneficiaire = line[105:125]
-        self.nom_beneficiaire = line[125:155]
-        self.ref_dossier = line[155:175]
-        self.code_enregistrement_complementaire = line[175:176]
-        self.nbr_enregistrement = line[176:178]
-        self.motif_virement = line[178:223]
-        self.date_compensation = line[223:231]
-        self.code_rejet = line[231:239]
-        self.situation_donneur = line[239:240]
-        self.type_compte_donneur = line[240:241]
-        self.nature_compte_donneur = line[241:242]
-        self.flag_change = line[242:243]
-        self.zone_libre_37 = line[243:280]
+def main():
+    # Read configuration from .conf file ---------------------------------------------
+    config = configparser.ConfigParser()
+    config.read('./conf/config.conf')
+    input_file = config.get('File', 'input_file')
+    input_directory = os.path.dirname(input_file)
+    # Check if the input directory exists, create it if not
+    if not os.path.exists(input_directory):
+        os.makedirs(input_directory)
+    output_directory = os.path.dirname('./output/')
+    # Check if the output directory exists, create it if not
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+    # Get output file location from the configuration
+    try:
+        output_file = config.get('File', 'output_file')
+    except Exception as e:
+        output_file = None  # valeur par défaut
+        print(f"Batch Mode Activated : {e}")
+    try:
+        mode_batch = config.get('conversion', 'mode_batch')
+        mode_batch = {"true": True, "false": False}.get(mode_batch.lower(), False)
+        print(f"Batch Mode {'Activated' if mode_batch else 'Disactivated'}")
+    except Exception as e:
+        mode_batch = False  # valeur par défaut
+        print(f"Batch Mode Disactivated : {e}")
+    target_bank_name = config.get('conversion', 'target_bank_name').upper()
+    # Read configuration from .conf file ---------------------------------------------
 
-    def __repr__(self):
-        return f"BodyLine({self.__dict__})"
-            
-class Virement:
-    def __init__(self, header, body):
-        self.header = header
-        self.body = body
+    # Config Log ---------------------------------------------------------------------
+    # Get log file location from the configuration
+    log_file = config.get('Log', 'log_file')
+    # Get log level from the configuration, default to INFO if not specified
+    log_level = config.get('Log', 'log_level', fallback='INFO')
+    # Extract directory from the log file path
+    log_directory = os.path.dirname(log_file)
+    # Extract directory from the log file path
+    # Check if the log directory exists, create it if not#
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+    # Set the log level based on the configuration
+    numeric_log_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_log_level, int):
+        raise ValueError('Invalid log level: %s' % log_level)
+    # Configure logging
+    logging.basicConfig(filename=log_file, level=numeric_log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+    # Config Log ---------------------------------------------------------------------
 
-    def __repr__(self):
-        return f"Virement(header={self.header}, body={self.body})"
-    
-class Bank:
-    data = [
-        { 'code': '01', 'name': 'ATB', 'bic': 'ATBK' },
-        { 'code': '02', 'name': 'BFT', 'bic': 'BFTN' },
-        { 'code': '03', 'name': 'BNA', 'bic': 'BNTE' },
-        { 'code': '04', 'name': 'ATTIJARI', 'bic': 'BSTU', 'num_lot': '0001', 'ccrr': '   ', 'ccra': '   ', 'extension': 'vir'  },
-        { 'code': '05', 'name': 'BT', 'bic': 'BTBK' },
-        { 'code': '07', 'name': 'AMEN', 'bic': 'CFCT' },
-        { 'code': '08', 'name': 'BIAT', 'bic': 'BIAT' },
-        { 'code': '10', 'name': 'STB', 'bic': 'STBK' },
-        { 'code': '11', 'name': 'UBCI', 'bic': 'UBCI' },
-        { 'code': '12', 'name': 'UIB', 'bic': 'UIBK' },
-        { 'code': '14', 'name': 'BH', 'bic': 'BHBK' },
-        { 'code': '16', 'name': 'CITI', 'bic': 'CITI' },
-        { 'code': '17', 'name': 'POSTE', 'bic': 'LPTN', 'ccrr': '000', 'ccra': '000', 'extension': 'txt' },
-        {'code': '20', 'name': 'BTK', 'bic': 'BTKO'},
-        {'code': '21', 'name': 'TSB', 'bic': 'TSIB'},
-        {'code': '23', 'name': 'QNB', 'bic': 'BTQI'},
-        {'code': '24', 'name': 'BTE', 'bic': 'BTEX'},
-        {'code': '25', 'name': 'ZITOUNA', 'bic': 'BZIT'},
-        {'code': '26', 'name': 'BTL', 'bic': 'ATLD'},
-        {'code': '28', 'name': 'ABC', 'bic': 'ABCO'},
-        {'code': '29', 'name': 'BFPME', 'bic': 'BFPM'},
-        {'code': '32', 'name': 'ALBARAKA', 'bic': 'BEIT'},
-        {'code': '47', 'name': 'WIFAK', 'bic': 'WKIB'},
-        {'code': '81', 'name': 'ZITOUNAPAY', 'bic': 'ETZP'}
-    ]
+    # Main program  ------------------------------------------------------------------
+    if mode_batch or output_file is None:
+        input_files = glob.glob(os.path.join(input_directory, '*'))
+        print(f"List of processing files: {input_files}")
+        for input_file in input_files:
+            try:
+                ProcessingService.processing_vir_batch(input_file, output_directory, target_bank_name,log_level)
+            except Exception as e:
+                logging.error(f"An error occurred while batch processing {input_file}: {e}")
+    else:
+            try:
+                ProcessingService.processing_vir_file(input_file, target_bank_name, output_file,log_level)
+            except Exception as e:
+                logging.error(f"An error occurred while file processing {input_file}: {e}")
+    # Main program  -----------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
