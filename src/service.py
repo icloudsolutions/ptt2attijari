@@ -7,7 +7,7 @@ import pprint
 
 def print_readable(virement):
     output = []
-    output.append("Header:")
+    output.append("\nHeader:")
     output.append(pprint.pformat(virement.header)) 
     output.append("\nBody:")
     for i, record in enumerate(virement.body):
@@ -43,32 +43,66 @@ class VirementService:
             updated_virement = VirementDAO.convert(virement, new_bank)
             print(f"Convertion sucess from {old_bank['name']} to {new_bank['name']} structure.")
             return updated_virement
+        
+        @staticmethod
+        def update_montant(virement, montant):
+            updated_virement = VirementDAO.update_montant_total(virement, montant)
+            print(f"Montant updated sucessefully !")
+            return updated_virement
 
 class ValidationService:
         @staticmethod
-        def validate_virement(virement, bank,filename,debug_mode):
-            try:
-                ValidationService._validate_header(virement.header, bank)
-                for body_line in virement.body:
-                    ValidationService._validate_bodyline(body_line, bank)
-                montant_total = int(virement.header.montant_total)
-                montant_virements = sum(int(line.montant_virement) for line in virement.body)
-                nbr_virement = int(virement.header.nbr_virement)
-                count_virement = len(virement.body)
-                valid_montant = montant_total == montant_virements
-                valid_count = nbr_virement == count_virement
-                print(f"\nValidation Test Results of file {filename} :")
-                print(f"Le Montant total du bordereau {montant_total/1000} {' est égal ' if valid_montant else 'n est pas égal'} à la somme des montants des virements soit {montant_virements/1000} dinars : Test {'Valid' if valid_montant else 'Invalid'}")
-                print(f"Le nombre total de virements est égal au nombre de lignes dans le corps du fichier soit {nbr_virement} virements : Test {'Valid' if valid_count else 'Invalid'}")
-                logging.info(f"Validation montant total du bordereau soit {montant_virements/1000} dinars : {'Valid' if valid_montant else 'Invalid'}")
-                logging.info(f"Validation nombre de virements {nbr_virement}: {'Valid' if valid_count else 'Invalid'}")
-                if debug_mode.upper()=='DEBUG':
-                    logging.info(f"Validation Succeed of {filename} : {print_readable(virement)}")
+        def validate_virement(virement, bank,filename,debug_mode,allowance):
+            montant_total = int(virement.header.montant_total)
+            montant_virements = sum(int(line.montant_virement) for line in virement.body)
+            nbr_virement = int(virement.header.nbr_virement)
+            count_virement = len(virement.body)
+            valid_montant = montant_total == montant_virements
+            valid_count = nbr_virement == count_virement
+            if valid_montant & valid_count:
+                try:
+                    ValidationService._validate_header(virement.header, bank)
+                    for body_line in virement.body:
+                        ValidationService._validate_bodyline(body_line, bank)
+                    print(f"Validation Test Results of file {filename} :")
+                    print(f"Le Montant total du bordereau {montant_total/1000} est égal à la somme des montants des virements soit {montant_virements/1000} dinars : Test Valid")
+                    print(f"Le nombre total de virements est égal au nombre de lignes dans le corps du fichier soit {nbr_virement} virements : Test Valid")
+                    logging.info(f"Le Montant total du bordereau {montant_total/1000} est égal à la somme des montants des virements soit {montant_virements/1000} dinars : Test Valid")
+                    logging.info(f"Le nombre total de virements est égal au nombre de lignes dans le corps du fichier soit {nbr_virement} virements : Test Valid")
+                    if debug_mode.upper()=='DEBUG':
+                        logging.info(f"Validation Succeed of {filename} : {print_readable(virement)}")
+                except AssertionError as e:
+                    logging.error(f"Validation failed of {filename} : {e}")
+                    raise
 
-            except AssertionError as e:
-                logging.error(f"Validation failed of {filename} : {e}")
-
-                raise
+            elif abs(montant_total-montant_virements)>int(allowance) & valid_count:
+                try:
+                    ValidationService._validate_header(virement.header, bank)
+                    for body_line in virement.body:
+                        ValidationService._validate_bodyline(body_line, bank)
+                    print(f"\nValidation Test Results of file {filename} :")
+                    logging.warning(f"Attention : Une différence de {abs(montant_total-montant_virements)} millimes a été enregistrée entre le montant total du bordereau {montant_total/1000} et la somme des montants des virements {montant_virements/1000} dinars : La Marge de tolérance de {allowance} millimes n'est pas respectée.")
+                    print(f"Le nombre total de virements est égal au nombre de lignes dans le corps du fichier soit {nbr_virement} virements : Test Valid")
+                    logging.info(f"Le nombre total de virements est égal au nombre de lignes dans le corps du fichier soit {nbr_virement} virements : Test Valid")
+                    if debug_mode.upper()=='DEBUG':
+                        logging.info(f"Validation Succeed of {filename} : {print_readable(virement)}")
+                except AssertionError as e:
+                    logging.error(f"Validation failed of {filename} : {e}")
+                    raise
+            elif 0<abs(montant_total-montant_virements)<=int(allowance):
+                try:
+                    ValidationService._validate_header(virement.header, bank)
+                    for body_line in virement.body:
+                        ValidationService._validate_bodyline(body_line, bank)
+                    print(f"\nValidation Test Results of file {filename} :")
+                    logging.warning(f"Attention : Une différence de {abs(montant_total-montant_virements)} millimes a été enregistrée entre le montant total du bordereau {montant_total/1000} et la somme des montants des virements {montant_virements/1000} dinars : La Marge de tolérance de {allowance} millimes est respectée.")
+                    print(f"Le nombre total de virements est égal au nombre de lignes dans le corps du fichier soit {nbr_virement} virements : Test Valid")
+                    logging.info(f"Le nombre total de virements est égal au nombre de lignes dans le corps du fichier soit {nbr_virement} virements : Test Valid")
+                    if debug_mode.upper()=='DEBUG':
+                        logging.info(f"Validation Succeed of {filename} : {print_readable(virement)}")
+                except AssertionError as e:
+                    logging.error(f"Validation failed of {filename} : {e}")
+                    raise
 
         @staticmethod
         def _validate_header(header, bank):
@@ -120,7 +154,7 @@ class ValidationService:
 
 
 class ProcessingService:
-                def processing_vir_batch(input_file,output_directory,target_bank_name,debug_mode):
+                def processing_vir_batch(input_file,output_directory,target_bank_name,debug_mode,allowance):
                     # Log the start of execution
                     logging.info('Processing vir Batch started.')
                     filename_without_extension = os.path.splitext(os.path.basename(input_file))[0]
@@ -137,16 +171,58 @@ class ProcessingService:
                         raise ValueError(f"Bank code '{target_bank_name}' from config file not found in bank data")
                     logging.info(f"Bank name determined from header : {bank_in['name']}")
                     logging.info(f"Bank name determined from config file : {bank_out['name']}")
+                    logging.info(f"Input file Tests processing..")
+                    print("\nInput file Tests processing ...")
                     # Validate virement in relation to the determined bank
-                    ValidationService.validate_virement(virement_in, bank_in,input_file,debug_mode)
-                    virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out)
-                    # Save virement to an output file after validation
-                    VirementService.save_virement(virement_out, output_file)
-                    virement = VirementService.get_virement(output_file)
-                    ValidationService.validate_virement(virement, bank_out,output_file,debug_mode)
-                    logging.info(f"Virement processing completed successfully")
+                    ValidationService.validate_virement(virement_in, bank_in,input_file,debug_mode,allowance)
 
-                def processing_vir_file(input_file,target_bank_name,output_file,debug_mode):
+                    #Test Tolerance ------------------
+                    montant_total = int(virement_in.header.montant_total)
+                    montant_virements = sum(int(line.montant_virement) for line in virement_in.body)
+                    if 0<abs(montant_total-montant_virements)<=int(allowance):
+                        try: 
+                            logging.warning(f"Le Montant Total va etre mis à jour {montant_total} -> {montant_virements} ! : La différence est de {abs(montant_total-montant_virements)} millimes reste dans la limite de tolerance {allowance} millimes.")
+                            print(f"Le Montant Total va etre mis à jour {montant_total} -> {montant_virements} ! : La différence est de {abs(montant_total-montant_virements)} millimes reste dans la limite de tolerance {allowance} millimes.")
+
+                            virement_in=VirementService.update_montant(virement_in,montant_virements)
+                            virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out)
+                            # Save virement to an output file after validation
+                            VirementService.save_virement(virement_out, output_file)
+                            virement = VirementService.get_virement(output_file)
+                            logging.info(f"Output file Test Processing...")
+                            print("\nOutput file Test Processing...")
+                            ValidationService.validate_virement(virement, bank_out,output_file,debug_mode,allowance)
+                            logging.info("Virement processing completed successfully")
+                            print(f"\n*** Conclusion : Virement processing completed successfully for {input_file} ***")
+                        except AssertionError as e:
+                            logging.error(f"Validation failed of {input_file} : {e}")
+                            raise
+                    elif montant_total==montant_virements:
+                        try:
+                            print("\nInput file convert Processing ..")
+                            virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out)
+                            # Save virement to an output file after validation
+                            VirementService.save_virement(virement_out, output_file)
+                            virement = VirementService.get_virement(output_file)
+                            logging.info(f"Output file Test Processing...")
+                            print("Output file Test Processing...")
+                            ValidationService.validate_virement(virement, bank_out,output_file,debug_mode,allowance)
+                            logging.info(f"Virement processing completed successfully")
+                            print(f"\n*** Conclusion : Virement processing completed successfully for {input_file} ***")
+                        except AssertionError as e:
+                            logging.error(f"Validation failed of {input_file} : {e}")
+                            raise
+
+                    else:
+                        try:
+                            print(f"Validation failed of {input_file}")
+                            print (f"La différence entre montant total {montant_total} et la somme des montants des virements {montant_virements} est hors limite de tolerance : {allowance} millimes.")
+                        except AssertionError as e:
+                            logging.error(f"Validation failed of {input_file} : {e}")
+                            logging.error(f"La différence entre montant total {montant_total} et la somme des montants des virements {montant_virements} est hors limite de tolerance : {allowance} millimes.")
+                            raise
+                        
+                def processing_vir_file(input_file,target_bank_name,output_file,debug_mode,allowance):
                     # Log the start of execution
                     logging.info('Processing vir file started.')
                     # Get virement from file
@@ -162,12 +238,12 @@ class ProcessingService:
                     logging.info(f"Bank name determined from header : {bank_in['name']}")
                     logging.info(f"Bank name determined from config file : {bank_out['name']}")
                     # Validate virement in relation to the determined bank
-                    ValidationService.validate_virement(virement_in, bank_in,input_file,debug_mode)
+                    ValidationService.validate_virement(virement_in, bank_in,input_file,debug_mode,allowance)
                     virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out)
                     # Save virement to an output file after validation
                     VirementService.save_virement(virement_out, output_file)
                     virement = VirementService.get_virement(output_file)
-                    ValidationService.validate_virement(virement, bank_out,output_file,debug_mode)
+                    ValidationService.validate_virement(virement, bank_out,output_file,debug_mode,allowance)
                     logging.info(f"Virement processing completed successfully")
 
 class HeaderService:
