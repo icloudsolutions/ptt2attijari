@@ -7,8 +7,8 @@ import glob
 def main():
     # Default configuration content
     default_config_content ="""[FILE]
-input_file = ./input/virement.txt
-output_file = ./output/virement.vir
+input_file = virement.txt
+output_file = virement.vir
 [LOG]
 #log_file = ./error.log
 log_level = info
@@ -52,7 +52,25 @@ mode_batch = true
         return config
 
     config = read_config(config_file_path, default_config_content)
-    input_file = config.get('FILE', 'input_file')
+
+    # Get output file location from the configuration
+    try:
+        input_file = config.get('FILE', 'input_file')
+    except Exception as e:
+        input_file = None  # valeur par défaut
+        print(f"Input File Not Found :  {e}")
+        logging.info(f"Input File Not Found : {e}")
+    
+    input_file_path = os.path.join(input_directory, input_file)
+
+    try:
+        output_file = config.get('FILE', 'output_file')
+    except Exception as e:
+        output_file = None  # valeur par défaut
+        print(f"Batch Mode Activated : {e}")
+        logging.info(f"Batch Mode Activated : {e}")
+    
+    output_file_path = os.path.join(output_directory, output_file)
 
     # Get the log file path, with handling for empty values
     log_file_path = config.get('LOG', 'log_file', fallback=os.path.join(log_dir, 'virement.log'))
@@ -86,13 +104,7 @@ mode_batch = true
         print(f"Batch Mode Disactivated : {e}")
         logging.error(f"Batch Mode Disactivated : {e}")
 
-    # Get output file location from the configuration
-    try:
-        output_file = config.get('FILE', 'output_file')
-    except Exception as e:
-        output_file = None  # valeur par défaut
-        print(f"Batch Mode Activated : {e}")
-        logging.info(f"Batch Mode Activated : {e}")
+
     
     try:
         target_bank_name = config.get('CONVERSION', 'target_bank_name').upper()
@@ -168,10 +180,11 @@ mode_batch = true
                 print(f"An error occurred while batch processing {input_file}: {e}")
                 logging.error(f"An error occurred while batch processing {input_file}: {e}")
     else:
+            
             try:
-                ProcessingService.processing_vir_file(input_file, target_bank_name,rib, output_file,log_level,allowance)
+                ProcessingService.processing_vir_file(input_file_path, target_bank_name,rib, output_file_path,log_level,allowance)
             except Exception as e:
-                logging.error(f"An error occurred while file processing {input_file}: {e}")
+                logging.error(f"An error occurred while file processing {input_file_path}: {e}")
     # Main program  -----------------------------------------------------------------
 
 if __name__ == '__main__':
