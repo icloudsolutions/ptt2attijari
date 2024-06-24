@@ -39,17 +39,22 @@ class VirementService:
             VirementDAO.delete_body_line(virement, index)
 
         @staticmethod
-        def convert_virement(virement, old_bank, new_bank):
-            updated_virement = VirementDAO.convert(virement, new_bank)
+        def convert_virement(virement, old_bank, new_bank,rib):
+            updated_virement = VirementDAO.convert(virement, new_bank,rib)
             print(f"Convertion sucess from {old_bank['name']} to {new_bank['name']} structure.")
             return updated_virement
         
         @staticmethod
         def update_montant(virement, montant):
             updated_virement = VirementDAO.update_montant_total(virement, montant)
-            print(f"Montant updated sucessefully !")
+            print(f"Montant updated sucessefully : {montant}")
             return updated_virement
 
+        @staticmethod
+        def update_rib_do(virement, rib):
+            updated_virement = VirementDAO.update_rib_do(virement, rib)
+            print(f"RIB donneur d'ordre updated sucessefully : {rib}")
+            return updated_virement
 class ValidationService:
         @staticmethod
         def validate_virement(virement, bank,filename,debug_mode,allowance):
@@ -154,7 +159,7 @@ class ValidationService:
 
 
 class ProcessingService:
-                def processing_vir_batch(input_file,output_directory,target_bank_name,debug_mode,allowance):
+                def processing_vir_batch(input_file,output_directory,target_bank_name,rib,debug_mode,allowance):
                     # Log the start of execution
                     logging.info('Processing vir Batch started.')
                     filename_without_extension = os.path.splitext(os.path.basename(input_file))[0]
@@ -185,7 +190,7 @@ class ProcessingService:
                             print(f"Le Montant Total va etre mis à jour {montant_total} -> {montant_virements} ! : La différence est de {abs(montant_total-montant_virements)} millimes reste dans la limite de tolerance {allowance} millimes.")
 
                             virement_in=VirementService.update_montant(virement_in,montant_virements)
-                            virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out)
+                            virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out,rib)
                             # Save virement to an output file after validation
                             VirementService.save_virement(virement_out, output_file)
                             virement = VirementService.get_virement(output_file)
@@ -200,7 +205,7 @@ class ProcessingService:
                     elif montant_total==montant_virements:
                         try:
                             print("\nInput file convert Processing ..")
-                            virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out)
+                            virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out,rib)
                             # Save virement to an output file after validation
                             VirementService.save_virement(virement_out, output_file)
                             virement = VirementService.get_virement(output_file)
@@ -222,7 +227,7 @@ class ProcessingService:
                             logging.error(f"La différence entre montant total {montant_total} et la somme des montants des virements {montant_virements} est hors limite de tolerance : {allowance} millimes.")
                             raise
                         
-                def processing_vir_file(input_file,target_bank_name,output_file,debug_mode,allowance):
+                def processing_vir_file(input_file,target_bank_name,rib,output_file,debug_mode,allowance):
                     # Log the start of execution
                     logging.info('Processing vir file started.')
                     # Get virement from file
@@ -239,7 +244,7 @@ class ProcessingService:
                     logging.info(f"Bank name determined from config file : {bank_out['name']}")
                     # Validate virement in relation to the determined bank
                     ValidationService.validate_virement(virement_in, bank_in,input_file,debug_mode,allowance)
-                    virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out)
+                    virement_out = VirementService.convert_virement(virement_in,bank_in,bank_out,rib)
                     # Save virement to an output file after validation
                     VirementService.save_virement(virement_out, output_file)
                     virement = VirementService.get_virement(output_file)
