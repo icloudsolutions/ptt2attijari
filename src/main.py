@@ -10,11 +10,12 @@ def main():
 input_file = ./input/virement.txt
 output_file = ./output/virement.vir
 [LOG]
-log_file = ./error.log
+#log_file = ./error.log
 log_level = info
 [CONVERSION]
 target_bank_name = attijari
-allowance = 0
+rib = 04012086008646649785
+allowance = 1
 mode_batch = true
 """
     user_dir = os.path.expanduser('~')
@@ -106,6 +107,13 @@ mode_batch = true
         allowance = 0  # valeur par défaut
         print(f"Allowance not specified : {e}")
         logging.info(f"Allowance not specified : {e}")
+    
+    try:
+        rib = config.get('CONVERSION', 'rib')
+    except Exception as e:
+        rib = None  # valeur par défaut
+        print(f"RIB not specified : {e}")
+        logging.info(f"RIB not specified : {e}")
 
     """# Read configuration from .conf file ---------------------------------------------
     config = configparser.ConfigParser()
@@ -155,13 +163,13 @@ mode_batch = true
         print(f"List of processing files: {input_files}")
         for input_file in input_files:
             try:
-                ProcessingService.processing_vir_batch(input_file, output_directory, target_bank_name,log_level,allowance)
+                ProcessingService.processing_vir_batch(input_file, output_directory, target_bank_name,rib,log_level,allowance)
             except Exception as e:
                 print(f"An error occurred while batch processing {input_file}: {e}")
                 logging.error(f"An error occurred while batch processing {input_file}: {e}")
     else:
             try:
-                ProcessingService.processing_vir_file(input_file, target_bank_name, output_file,log_level,allowance)
+                ProcessingService.processing_vir_file(input_file, target_bank_name,rib, output_file,log_level,allowance)
             except Exception as e:
                 logging.error(f"An error occurred while file processing {input_file}: {e}")
     # Main program  -----------------------------------------------------------------

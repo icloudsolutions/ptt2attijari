@@ -1,4 +1,6 @@
 from models import Header, BodyLine, Virement, Bank
+from tnrib import TNRIB
+
 
 class VirementDAO:
 
@@ -91,14 +93,32 @@ class VirementDAO:
                 body_line.num_lot = num_lot
 
     @staticmethod
-    def convert(virement, bank_out):
+    def update_montant_total(virement, montant):
+        if montant is not None:
+            montant_str = str(montant)
+            virement.header.montant_total = montant_str.zfill(15)
+        return virement
+
+    @staticmethod
+    def update_rib_do(virement, rib):
+        if not TNRIB(rib).valid:
+            raise ValueError("Le RIB fourni de donneur d'ordre  n'est pas valide.")
+        for body_line in virement.body:
+            body_line.rib_emetteur = rib
+        return virement
+
+
+    @staticmethod
+    def convert(virement, bank_out,rib):
         # Update num_lot, ccra, ccrr, and code_remettant
         VirementDAO.update_num_lot(virement, bank_out['num_lot'])
         VirementDAO.update_ccra(virement, bank_out['ccra'])
         VirementDAO.update_ccrr(virement, bank_out['ccrr'])
         VirementDAO.update_code_remettant(virement, bank_out['code'])
+        VirementDAO.update_rib_do(virement,rib)
         # Return the modified virement object
         return virement
+
 
 class HeaderDAO:
     @staticmethod
