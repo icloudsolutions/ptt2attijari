@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import *
 from dao import VirementDAO, HeaderDAO, BodyDAO, BodyLineDAO, BankDAO
 from tnrib import TNRIB
 import os
@@ -173,6 +173,32 @@ class ProcessingService:
                     logging.info(f"Bank name determined from config file : {bank_out['name']}")
                     logging.info(f"Input file Tests processing..")
                     print("\nInput file Tests processing ...")
+
+                    #########################################
+                
+                    current_date = datetime.now().strftime('%Y%m%d')
+                    processed_lines = []
+                    with open(input_file, 'r') as file:
+                        lines = file.readlines()
+                    for line in lines:
+                        # Assuming date format starts at index 8 and is 8 characters long
+                        date_position = 8
+                        date_length = 8
+                        transaction_date_str = line[date_position:date_position + date_length]
+                        try: #conversion reussite 
+                            transaction_date = datetime.strptime(transaction_date_str, '%Y%m%d')
+                            # Check if transaction date is valid (must be today's date or later)
+                            if transaction_date < datetime.now():
+                                line = line[:date_position] + current_date + line[date_position + date_length:]
+                        except ValueError:
+                            # Replace with current date
+                            line = line[:date_position] + current_date + line[date_position + date_length:]
+                        processed_lines.append(line)
+                    # Write processed lines to output file
+                    with open(output_file, 'w') as file:
+                        file.writelines(processed_lines)
+                        
+                    #########################################
                     # Validate virement in relation to the determined bank
                     ValidationService.validate_virement(virement_in, bank_in,input_file,debug_mode,allowance)
                     #Test Tolerance ------------------
