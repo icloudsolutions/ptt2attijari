@@ -51,6 +51,12 @@ class VirementService:
             return updated_virement
 
         @staticmethod
+        def update_operation_date(virement, operation_date):        
+            updated_virement = VirementDAO.update_operation_date(virement, operation_date)
+            print(f"Operation date updated sucessefully : {operation_date}")
+            return updated_virement
+        
+        @staticmethod
         def update_rib_do(virement, rib):
             updated_virement = VirementDAO.update_rib_do(virement, rib)
             print(f"RIB donneur d'ordre updated sucessefully : {rib}")
@@ -116,7 +122,11 @@ class ValidationService:
                 assert header.nature_remettant == "1", f"Nature remettant invalid: {header.nature_remettant}"
                 assert header.code_remettant == bank['code'], f"Code remettant (code banque) invalid: {header.code_remettant}. It must be {bank['code']} for {bank['name']}"
                 assert header.ccrr == bank['ccrr'], f"Code du centre régional remettant invalid: '{header.ccrr}'. It must be '{bank['ccrr']}'"
-                assert header.date_operation == datetime.today().strftime("%Y%m%d"), f"Date opération invalid: {header.date_operation}. It must be today's date {datetime.today().strftime('%Y%m%d')}"
+                #assert header.date_operation == datetime.today().strftime("%Y%m%d"), f"Date opération invalid: {header.date_operation}. It must be today's date {datetime.today().strftime('%Y%m%d')}"
+                # Date operation check with continue on failure
+                if header.date_operation != datetime.today().strftime("%Y%m%d"):
+                    print(f"The operation date : {header.date_operation} will be set to {datetime.today().strftime('%Y%m%d')}")   
+                    logging.warning(f"Invalide operation date ! The operation date : {header.date_operation} will be set to {datetime.today().strftime('%Y%m%d')}")   
                 # Check if bank.num_lot is defined before comparing
                 if 'num_lot' in bank and bank['num_lot']:
                     assert header.num_lot == bank['num_lot'], f"Numéro de lot invalid: {header.num_lot}. It must be {bank['num_lot']}"
@@ -134,7 +144,7 @@ class ValidationService:
                 assert body_line.code_valeur == "10", f"Code valeur invalid: {body_line.code_valeur}. Code valeur must be 10"
                 assert body_line.nature_remettant == "1", f"Nature remettant invalid: {body_line.nature_remettant}"
                 assert body_line.ccrr == bank['ccrr'], f"Code du centre régional remettant invalid: '{body_line.ccrr}'. It must be '{bank['ccrr']}'"
-                assert body_line.date_operation == datetime.today().strftime("%Y%m%d"), f"Date opération invalid: {body_line.date_operation}. It must be today's date {datetime.today().strftime('%Y%m%d')}"
+                #assert body_line.date_operation == datetime.today().strftime("%Y%m%d"), f"Date opération invalid: {body_line.date_operation}. It must be today's date {datetime.today().strftime('%Y%m%d')}"
                 if 'num_lot' in bank and bank['num_lot']:
                     assert body_line.num_lot ==  bank['num_lot'], f"Numéro de lot invalid: {body_line.num_lot}. It must be {bank['num_lot']}"
                 assert body_line.code_devise == "788", f"Code devise invalid: {body_line.code_devise}. It must be 788 for dinars"
@@ -142,7 +152,7 @@ class ValidationService:
                 assert body_line.code_enregistrement == "21", f"Code enregistrement invalid: {body_line.code_enregistrement}. It must be 21"
                 assert body_line.code_enregistrement_complementaire == "0", f"Code enregistrement complémentaire invalid: {body_line.code_enregistrement_complementaire}. It must be 0"
                 assert body_line.nbr_enregistrement == "00", f"Nombre enregistrement invalid: {body_line.nbr_enregistrement}. It must be 00"
-                assert body_line.date_compensation == datetime.today().strftime("%Y%m%d"), f"Date de compensation invalid: {body_line.date_compensation}. It must be today's date {datetime.today().strftime('%Y%m%d')}"
+                #assert body_line.date_compensation == datetime.today().strftime("%Y%m%d"), f"Date de compensation invalid: {body_line.date_compensation}. It must be today's date {datetime.today().strftime('%Y%m%d')}"
                 assert body_line.situation_donneur == "0", f"Situation du donneur d’ordres invalid: {body_line.situation_donneur}. It must be 1 (Résident)"
                 assert body_line.type_compte_donneur == "1", f"Type du compte du donneur d’ordres invalid: {body_line.type_compte_donneur}. It must be 1 (Compte en dinars)"
                 assert body_line.nature_compte_donneur == "0", f"Nature du compte du donneur d’ordres invalid: {body_line.nature_compte_donneur}. It must be '0' (pas d'exigence d’un dossier de change et de commerce extérieur)"
@@ -282,6 +292,8 @@ class ProcessingService:
                             logging.error(f"Validation failed of {input_file} : {e}")
                             logging.error(f"La différence entre montant total {montant_total} et la somme des montants des virements {montant_virements} est hors limite de tolerance : {allowance} millimes.")
                             raise
+                                        #check operation date
+
 
 class HeaderService:
 
