@@ -1,5 +1,6 @@
 from models import Header, BodyLine, Virement, Bank
 from tnrib import TNRIB
+from datetime import datetime
 
 
 class VirementDAO:
@@ -107,15 +108,27 @@ class VirementDAO:
             body_line.rib_emetteur = rib
         return virement
 
+    @staticmethod
+    def update_operation_date(virement, operation_date):
+        if operation_date is None:
+            raise ValueError("La date d'opération fournie  n'est pas valide.")
+        virement.header.date_operation = operation_date
+        for body_line in virement.body:
+            body_line.date_operation  = operation_date
+            body_line.date_compensation  = operation_date
+        return virement
 
     @staticmethod
     def convert(virement, bank_out,rib):
         # Update num_lot, ccra, ccrr, and code_remettant
+        operation_date = datetime.today().strftime('%Y%m%d')
         VirementDAO.update_num_lot(virement, bank_out['num_lot'])
         VirementDAO.update_ccra(virement, bank_out['ccra'])
         VirementDAO.update_ccrr(virement, bank_out['ccrr'])
         VirementDAO.update_code_remettant(virement, bank_out['code'])
         VirementDAO.update_rib_do(virement,rib)
+        if virement.header.date_operation != operation_date: 
+            VirementDAO.update_operation_date(virement,operation_date)
         # Return the modified virement object
         return virement
 
