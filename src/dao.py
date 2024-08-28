@@ -119,6 +119,19 @@ class VirementDAO:
         return virement
 
     @staticmethod
+    def update_motif_operation(virement):
+        for body_line in virement.body:            
+            if body_line.motif_virement.startswith("R"):
+                print("Info Motif de virement : Le motif de l'opération commence par 'R'.")
+                if body_line.motif_virement.startswith("RC"):
+                    nouveau_motif = body_line.motif_virement.replace("RC", "APCI", 1)
+                    body_line.motif_virement = nouveau_motif
+                    print("Modification effectuée. Le nouveau motif est:", nouveau_motif)
+                else:
+                    print("Alerte: Le motif commence par 'R' mais pas par 'RC'. Aucune modification effectuée.")
+        return virement        
+    
+    @staticmethod
     def convert(virement, bank_out,rib):
         # Update num_lot, ccra, ccrr, and code_remettant
         operation_date = datetime.today().strftime('%Y%m%d')
@@ -129,6 +142,7 @@ class VirementDAO:
         VirementDAO.update_rib_do(virement,rib)
         if virement.header.date_operation != operation_date: 
             VirementDAO.update_operation_date(virement,operation_date)
+        VirementDAO.update_motif_operation(virement)
         # Return the modified virement object
         return virement
 

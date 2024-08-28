@@ -61,6 +61,12 @@ class VirementService:
             updated_virement = VirementDAO.update_rib_do(virement, rib)
             print(f"RIB donneur d'ordre updated sucessefully : {rib}")
             return updated_virement
+        
+        @staticmethod
+        def update_motif_virement(virement):
+            updated_virement = VirementDAO.update_motif_operation(virement)
+            return updated_virement
+        
 class ValidationService:
         @staticmethod
         def validate_virement(virement, bank,filename,debug_mode,allowance):
