@@ -120,16 +120,18 @@ class VirementDAO:
 
     @staticmethod
     def update_motif_operation(virement):
+        remplacement_count = 0  # Compteur pour les remplacements
         for body_line in virement.body:            
             if body_line.motif_virement.startswith("R"):
-                print("Info Motif de virement : Le motif de l'opération commence par 'R'.")
                 if body_line.motif_virement.startswith("RC"):
-                    nouveau_motif = body_line.motif_virement.replace("RC", "APCI", 1)
-                    body_line.motif_virement = nouveau_motif
-                    print("Modification effectuée. Le nouveau motif est:", nouveau_motif)
+                    body_line.motif_virement = body_line.motif_virement.replace("RC", "APCI", 1)[:45]
+                    remplacement_count += 1  # Incrémentation du compteur
                 else:
                     print("Alerte: Le motif commence par 'R' mais pas par 'RC'. Aucune modification effectuée.")
-        return virement        
+        # Imprimer une seule ligne avec le nombre de remplacements effectués
+        if remplacement_count > 0:
+            print(f"Un remplacement de 'RC' par 'APCI' a été effectué {remplacement_count} fois.")
+        return virement       
     
     @staticmethod
     def convert(virement, bank_out,rib):
